@@ -68,6 +68,7 @@ class Repo:
     from dvc.repo.imp_url import imp_url
     from dvc.repo.install import install  # type: ignore[misc]
     from dvc.repo.ls import ls as _ls  # type: ignore[misc]
+    from dvc.repo.du import du as _du  # type: ignore[misc]
     from dvc.repo.move import move
     from dvc.repo.pull import pull
     from dvc.repo.push import push
@@ -80,6 +81,7 @@ class Repo:
     ls = staticmethod(_ls)
     get = staticmethod(_get)
     get_url = staticmethod(_get_url)
+    du = staticmethod(_du)
 
     def _get_repo_dirs(
         self,

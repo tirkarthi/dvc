@@ -17,6 +17,7 @@ from dvc.commands import (
     data_sync,
     destroy,
     diff,
+    du,
     experiments,
     freeze,
     gc,
@@ -86,6 +87,7 @@ COMMANDS = [
     experiments,
     check_ignore,
     machine,
+    du,
 ]
 
 
