@@ -7,6 +7,7 @@ from dvc.cli.utils import append_doc_link
 from dvc.commands.ls.ls_colors import LsColors
 from dvc.exceptions import DvcException
 from dvc.ui import ui
+from dvc.utils.humanize import format_disk_space
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,11 @@ class CmdDiskUsage(CmdBaseNoRepo):
                 dvc_only=self.args.dvc_only,
                 summary=self.args.summary,
             )
+
+            if self.args.human_readable:
+                for entry in entries:
+                    entry["size"] = format_disk_space(entry["size"])
+
             if self.args.json:
                 ui.write_json(entries)
             elif entries:
@@ -62,6 +68,8 @@ def add_parser(subparsers, parent_parser):
         description=append_doc_link(DISK_USAGE_HELP, "du"),
         help=DISK_USAGE_HELP,
         formatter_class=argparse.RawTextHelpFormatter,
+        # Override help for human_readable https://stackoverflow.com/a/14951061/2610955
+        add_help=False,
     )
     du_parser.add_argument("url", help="Location of DVC repository")
     du_parser.add_argument(
@@ -73,6 +81,19 @@ def add_parser(subparsers, parent_parser):
         action="store_true",
         help="Show output in JSON format.",
     )
+    # Override --help since -h is made available for human_readable
+    du_parser.add_argument(
+        "--help",
+        action="help",
+        help=DISK_USAGE_HELP,
+    )
+    du_parser.add_argument(
+        "-h",
+        "--human-readable",
+        action="store_true",
+        help="Show output in human readable format.",
+    )
+
     du_parser.add_argument(
         "--rev",
         nargs="?",

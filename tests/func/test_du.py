@@ -1,4 +1,6 @@
+import io
 import os
+from contextlib import redirect_stdout, suppress
 
 import pytest
 
@@ -196,6 +198,25 @@ def test_du_rev(tmp_dir, dvc, scm):
     assert files == rev1_expected
 
 
+@pytest.mark.parametrize(
+    "human_readable,size", [(True, "3.1K"), (False, "3072")]
+)
+def test_du_human_readable(human_readable, size, tmp_dir, dvc, scm):
+    """Test human readable output"""
+
+    tmp_dir.scm_gen({"foo": "bar" * 1024}, commit="dvc")
+    buf = io.StringIO()
+
+    flags = []
+    if human_readable:
+        flags = ["-h"]
+
+    with redirect_stdout(buf):
+        assert main(["du", *flags, os.fspath(tmp_dir)]) == 0
+
+    assert f"{size}       foo" in buf.getvalue()
+
+
 def test_du_invalid_path_exception(tmp_dir, dvc, scm):
     """Test invalid path raises Exception."""
 
@@ -210,3 +231,23 @@ def test_du_cli(tmp_dir, dvc, scm):
 
     tmp_dir.dvc_gen({"foo": "bar", "bar": "baz"}, commit="dvc")
     assert main(["du", os.fspath(tmp_dir)]) == 0
+
+
+def test_du_help_works(tmp_dir, dvc, scm):
+    """Test du --help works since -h is overridden"""
+
+    usage_lines = [
+        "usage: dvc du [-q | -v] [--dvc-only] [--json] [--help] [-h] [--rev [<commit>]]",
+        "[-s]",
+        "url [path]",
+    ]
+
+    buf = io.StringIO()
+
+    with redirect_stdout(buf):
+        # Suppress SystemExit since argparse raises it for help
+        with suppress(SystemExit):
+            assert main(["du", "--help"]) == 0
+
+    output_lines = [line.strip() for line in buf.getvalue().splitlines()]
+    assert output_lines[:3] == usage_lines

@@ -37,3 +37,12 @@ def truncate_text(
         return text[: max_length - 1] + ELLIPSIS
 
     return text[:max_length]
+
+
+# https://stackoverflow.com/a/1094933/2610955
+def format_disk_space(num, base=1000, suffix=""):
+    for unit in ["", "K", "M", "G", "T", "P", "E", "Z"]:
+        if abs(num) < base:
+            return f"{num:3.1f}{unit}{suffix}"
+        num /= base
+    return f"{num:.1f}Y{suffix}"
