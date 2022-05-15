@@ -3,6 +3,7 @@ from itertools import chain
 from typing import TYPE_CHECKING, Optional
 
 from dvc.exceptions import PathMissingError
+from dvc.repo.du import info_from_repo
 
 if TYPE_CHECKING:
     from dvc.fs.dvc import DvcFileSystem
@@ -64,23 +65,7 @@ def _ls(
     except FileNotFoundError:
         raise PathMissingError(path, repo, dvc_only=dvc_only)
 
-    infos = {}
-    for root, dirs, files in fs.walk(
-        fs_path, dvcfiles=True, dvc_only=dvc_only
-    ):
-        entries = chain(files, dirs) if not recursive else files
-
-        for entry in entries:
-            entry_fs_path = fs.path.join(root, entry)
-            relparts = fs.path.relparts(entry_fs_path, fs_path)
-            name = os.path.join(*relparts)
-            infos[name] = fs.info(entry_fs_path)
-
-        if not recursive:
-            break
-
-    if not infos and fs.isfile(fs_path):
-        infos[os.path.basename(path)] = fs.info(fs_path)
+    infos = info_from_repo(dvc_only, path, repo, recursive)
 
     ret = {}
     for name, info in infos.items():
