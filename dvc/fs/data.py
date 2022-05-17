@@ -170,6 +170,10 @@ class _DataFileSystem(AbstractFileSystem):  # pylint:disable=abstract-method
             path, lpath, callback=callback, **kwargs
         )
 
+    def get_remote_path(self, rpath):
+        fs, path = self._get_fs_path(rpath)
+        return fs, path
+
     def checksum(self, path):
         info = self.info(path)
         md5 = info.get("md5")

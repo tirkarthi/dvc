@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Iterator, Optional, TypedDict
 from dvc.exceptions import PathMissingError
 
 if TYPE_CHECKING:
+    from dvc.fs.data import _DataFileSystem
     from dvc.fs.dvc import DvcFileSystem
 
     from . import Repo
@@ -117,6 +118,11 @@ def _calculate_size(info) -> int:
     return _calculate_size_from_folder(info["repo"], info["name"])
 
 
+def _calculate_size_from_data_fs(data_fs: "_DataFileSystem", path: str) -> int:
+    fs, path = data_fs.get_remote_path(path)
+    return fs.size(path)
+
+
 def info_from_repo(
     dvc_only: bool, path: str, repo: "Repo", recursive: bool
 ) -> dict[str, dict[str, Any]]:
@@ -153,6 +159,7 @@ def _du(
     repo: "Repo", path: str, dvc_only: bool = False
 ) -> Iterator[DiskUsageEntry]:
 
+    data_fs: "_DataFileSystem" = repo.datafs.fs
     infos = info_from_repo(dvc_only, path, repo, recursive=False)
 
     for name, info in infos.items():
@@ -162,6 +169,9 @@ def _du(
         if dvc_info.get("outs") or not dvc_only:
             if not isdir:
                 size = info.get("size", 0)
+                if size is None:
+                    path = info["name"]
+                    size = _calculate_size_from_data_fs(data_fs, path)
             else:
                 size = _calculate_size(info)
 
