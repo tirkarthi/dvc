@@ -251,3 +251,29 @@ def test_du_help_works(tmp_dir, dvc, scm):
 
     output_lines = [line.strip() for line in buf.getvalue().splitlines()]
     assert output_lines[:3] == usage_lines
+
+
+def test_remote_fetch(tmp_dir, local_cloud, dvc, scm):
+    """Test calculating file size from remote."""
+
+    tmp_dir.dvc_gen({"bar": {"bar": "baz" * 10}}, commit="dvc")
+
+    ret = main(["remote", "add", "upstream", local_cloud.url])
+    ret = main(["push", "-r", "upstream"])
+
+    # Remove file to trigger remote lookup.
+    os.unlink(os.path.join(tmp_dir, "bar", "bar"))
+
+    files = Repo.du(
+        os.fspath(tmp_dir), summary=False, dvc_only=True, recursive=True
+    )
+
+    assert files == [
+        {
+            "isdir": False,
+            "isexec": False,
+            "isout": True,
+            "path": "bar/bar",
+            "size": 30,
+        }
+    ]

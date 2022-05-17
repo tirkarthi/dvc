@@ -26,6 +26,7 @@ def du(
     rev: Optional[str] = None,
     dvc_only: bool = False,
     summary: bool = True,
+    recursive: bool = False,
 ) -> list[DiskUsageEntry]:
     """Methods for retrieving size of files and outputs for the repo.
 
@@ -53,7 +54,7 @@ def du(
     with Repo.open(url, rev=rev, subrepos=True, uninitialized=True) as repo:
         path = path or ""
 
-        entries = list(_du(repo, path, dvc_only))
+        entries = list(_du(repo, path, dvc_only, recursive))
 
         # For summary single entry of folder and total size can be returned
         if summary:
@@ -156,11 +157,11 @@ def info_from_repo(
 
 
 def _du(
-    repo: "Repo", path: str, dvc_only: bool = False
+    repo: "Repo", path: str, dvc_only: bool = False, recursive: bool = False
 ) -> Iterator[DiskUsageEntry]:
 
     data_fs: "_DataFileSystem" = repo.datafs.fs
-    infos = info_from_repo(dvc_only, path, repo, recursive=False)
+    infos = info_from_repo(dvc_only, path, repo, recursive=recursive)
 
     for name, info in infos.items():
         isdir = info["type"] == "directory"
