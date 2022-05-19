@@ -18,45 +18,33 @@ def test_du_repo(tmp_dir, dvc, scm):
     assert files == [
         {
             "path": ".dvcignore",
-            "isout": False,
             "isdir": False,
             "size": 139,
-            "isexec": False,
         },
         {
             "path": ".gitignore",
-            "isout": False,
             "isdir": False,
             "size": 10,
-            "isexec": False,
         },
         {
             "path": "bar",
-            "isout": True,
             "isdir": False,
             "size": 3,
-            "isexec": False,
         },
         {
             "path": "bar.dvc",
-            "isout": False,
             "isdir": False,
             "size": 68,
-            "isexec": False,
         },
         {
             "path": "foo",
-            "isout": True,
             "isdir": False,
             "size": 3,
-            "isexec": False,
         },
         {
             "path": "foo.dvc",
-            "isout": False,
             "isdir": False,
             "size": 68,
-            "isexec": False,
         },
     ]
 
@@ -71,8 +59,6 @@ def test_du_repo_summary(tmp_dir, dvc, scm):
         {
             "path": os.fspath(tmp_dir),
             "isdir": True,
-            "isexec": False,
-            "isout": False,
             "size": 291,
         }
     ]
@@ -87,22 +73,16 @@ def test_du_scm(tmp_dir, dvc, scm):
     assert files == [
         {
             "isdir": False,
-            "isexec": False,
-            "isout": False,
             "path": ".dvcignore",
             "size": 139,
         },
         {
             "isdir": True,
-            "isexec": False,
-            "isout": False,
             "path": "bar",
             "size": 3,
         },
         {
             "isdir": False,
-            "isexec": False,
-            "isout": False,
             "path": "foo",
             "size": 3,
         },
@@ -118,10 +98,8 @@ def test_du_scm_path(tmp_dir, dvc, scm):
     assert files == [
         {
             "path": "bar",
-            "isout": False,
-            "isdir": False,
             "size": 3,
-            "isexec": False,
+            "isdir": False,
         }
     ]
 
@@ -135,10 +113,8 @@ def test_du_path(tmp_dir, dvc, scm):
     assert files == [
         {
             "path": "bar",
-            "isout": True,
-            "isdir": False,
             "size": 3,
-            "isexec": False,
+            "isdir": False,
         },
     ]
 
@@ -151,10 +127,8 @@ def test_du_path_summary(tmp_dir, dvc, scm):
 
     assert files == [
         {
-            "path": os.fspath(tmp_dir),
+            "path": "bar/",
             "isdir": True,
-            "isexec": False,
-            "isout": False,
             "size": 3,
         }
     ]
@@ -169,8 +143,6 @@ def test_du_rev(tmp_dir, dvc, scm):
         {
             "path": os.fspath(tmp_dir),
             "isdir": True,
-            "isexec": False,
-            "isout": False,
             "size": 215,
         }
     ]
@@ -184,8 +156,6 @@ def test_du_rev(tmp_dir, dvc, scm):
         {
             "path": os.fspath(tmp_dir),
             "isdir": True,
-            "isexec": False,
-            "isout": False,
             "size": 216,  # Plus 1 since one additional character
         }
     ]
@@ -271,8 +241,6 @@ def test_remote_fetch(tmp_dir, local_cloud, dvc, scm):
     assert files == [
         {
             "isdir": False,
-            "isexec": False,
-            "isout": True,
             "path": "bar/bar",
             "size": 30,
         }

@@ -170,10 +170,6 @@ class _DataFileSystem(AbstractFileSystem):  # pylint:disable=abstract-method
             path, lpath, callback=callback, **kwargs
         )
 
-    def get_remote_path(self, rpath):
-        fs, path = self._get_fs_path(rpath)
-        return fs, path
-
     def checksum(self, path):
         info = self.info(path)
         md5 = info.get("md5")
@@ -201,3 +197,12 @@ class DataFileSystem(FileSystem):
     @property
     def repo(self):
         return self.fs.repo
+
+    def size(self, path):
+        size = super().size(path)
+
+        if size is None:
+            fs, rpath = self.fs._get_fs_path(path)
+            size = fs.size(rpath)
+
+        return size

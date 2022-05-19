@@ -1,12 +1,11 @@
 import os
 from itertools import chain
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Iterator, Optional, TypedDict
 
 from dvc.exceptions import PathMissingError
 
 if TYPE_CHECKING:
-    from dvc.fs.data import _DataFileSystem
+    from dvc.fs.data import DataFileSystem
     from dvc.fs.dvc import DvcFileSystem
 
     from . import Repo
@@ -14,9 +13,7 @@ if TYPE_CHECKING:
 
 class DiskUsageEntry(TypedDict):
     path: str
-    isout: bool
     isdir: bool
-    isexec: bool
     size: int
 
 
@@ -43,15 +40,13 @@ def du(
         `entry` is a dictionary with structure
         {
             "path": str,
-            "isout": bool,
             "isdir": bool,
-            "isexec": bool,
             "size": int
         }
     """
     from . import Repo
 
-    with Repo.open(url, rev=rev, subrepos=True, uninitialized=True) as repo:
+    with Repo.open(url=url, rev=rev) as repo:
         path = path or ""
 
         entries = list(_du(repo, path, dvc_only, recursive))
@@ -61,10 +56,8 @@ def du(
             total_size = sum(entry.get("size", 0) for entry in entries)
             entries = [
                 {
-                    "path": url,
+                    "path": path or url,
                     "isdir": True,
-                    "isexec": False,
-                    "isout": False,
                     "size": total_size,
                 }
             ]
@@ -76,7 +69,7 @@ def du(
 
 def _calculate_size_from_dvc_info(dvc_info) -> int:
     size = 0
-    for ((_, *_), (meta, *_)) in dvc_info.get("outs", []):
+    for (_, (meta, *_)) in dvc_info.get("outs", []):
         if not meta:
             continue
         size += meta.size
@@ -85,29 +78,10 @@ def _calculate_size_from_dvc_info(dvc_info) -> int:
 
 
 def _calculate_size_from_folder(repo, folder) -> int:
-    # For SCM folders the path is cloned to a temporary directory
-    # Use the temporary directory value so that we can from there
-    # to calculate size for a directory.
-    if repo.scm:
-        root_directory = Path(repo.scm._root_dir)
-    else:
-        root_directory = Path(repo.root_dir)
+    if folder.startswith("/"):
+        folder = folder[1:]
 
-    folder = Path(folder)
-    root = folder.root
-
-    # For a folder path that starts "/" using it with root_dir will
-    # make it the root path. Remove "/" to make the folder path relative
-    # to root_dir
-    if root == "/":
-        absolute_path = Path(root_directory, *folder.parts[1:])
-    else:
-        absolute_path = Path(root_directory, folder)
-
-    # https://stackoverflow.com/a/1392549/2610955
-    return sum(
-        f.stat().st_size for f in absolute_path.glob("**/*") if f.is_file()
-    )
+    return repo.fs.du(folder, total=True)
 
 
 def _calculate_size(info) -> int:
@@ -117,11 +91,6 @@ def _calculate_size(info) -> int:
         return _calculate_size_from_dvc_info(dvc_info)
 
     return _calculate_size_from_folder(info["repo"], info["name"])
-
-
-def _calculate_size_from_data_fs(data_fs: "_DataFileSystem", path: str) -> int:
-    fs, path = data_fs.get_remote_path(path)
-    return fs.size(path)
 
 
 def info_from_repo(
@@ -160,7 +129,7 @@ def _du(
     repo: "Repo", path: str, dvc_only: bool = False, recursive: bool = False
 ) -> Iterator[DiskUsageEntry]:
 
-    data_fs: "_DataFileSystem" = repo.datafs.fs
+    data_fs: "DataFileSystem" = repo.datafs
     infos = info_from_repo(dvc_only, path, repo, recursive=recursive)
 
     for name, info in infos.items():
@@ -172,14 +141,12 @@ def _du(
                 size = info.get("size", 0)
                 if size is None:
                     path = info["name"]
-                    size = _calculate_size_from_data_fs(data_fs, path)
+                    size = data_fs.size(path)
             else:
                 size = _calculate_size(info)
 
             yield {
                 "path": name,
-                "isout": dvc_info.get("isout", False),
                 "isdir": isdir,
                 "size": size,
-                "isexec": info.get("isexec", False),
             }
